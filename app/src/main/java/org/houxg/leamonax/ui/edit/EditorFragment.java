@@ -35,10 +35,13 @@ import com.yuyh.library.imgsel.ImgSelConfig;
 
 import org.houxg.leamonax.Leamonax;
 import org.houxg.leamonax.R;
+import org.houxg.leamonax.database.NoteDataStore;
 import org.houxg.leamonax.editor.Editor;
 import org.houxg.leamonax.editor.MarkdownEditor;
 import org.houxg.leamonax.editor.RichTextEditor;
+import org.houxg.leamonax.model.Note;
 import org.houxg.leamonax.service.NoteFileService;
+import org.houxg.leamonax.ui.NotePreviewActivity;
 import org.houxg.leamonax.ui.PictureViewerActivity;
 import org.houxg.leamonax.utils.CollectionUtils;
 import org.houxg.leamonax.utils.DialogUtils;
@@ -493,6 +496,13 @@ public class EditorFragment extends Fragment implements Editor.EditorListener {
             {
                 // TODO: handle exception
                 e.printStackTrace();
+            }
+        } else if (url.startsWith("leanote://note/gotoNote?id=")) {
+            Uri uri = Uri.parse(url);
+            String noteId = uri.getQueryParameter("id");
+            Note note = NoteDataStore.getByServerId(noteId);
+            if (note != null) {
+                startActivity(NotePreviewActivity.getOpenIntent(getActivity(), note.getId()));
             }
         } else {
             OpenUtils.openUrl(getActivity(), url);
