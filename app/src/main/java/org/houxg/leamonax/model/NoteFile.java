@@ -26,12 +26,15 @@ public class NoteFile extends BaseModel {
     @Column(name = "localPath")
     String mLocalPath;
 
+    @Column(name = "type")
     @SerializedName("Type")
     String mType;
 
+    @Column(name = "title")
     @SerializedName("Title")
     String mTitle;
 
+    @Column(name = "hasBody")
     @SerializedName("HasBody")
     boolean mHasBody;
 

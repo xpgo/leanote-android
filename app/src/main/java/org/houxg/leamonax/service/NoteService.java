@@ -154,6 +154,9 @@ public class NoteService {
             }
             local.setServerId(remote.getServerId());
             local.setNoteId(noteLocalId);
+            local.setTitle(remote.getTitle());
+            local.setIsAttach(remote.isAttach());
+            local.setType(remote.getType());
             local.save();
             excepts.add(local.getLocalId());
         }
@@ -161,7 +164,7 @@ public class NoteService {
     }
 
     private static String convertToLocalImageLinkForRichText(long noteLocalId, String noteContent) {
-        return StringUtils.replace(noteContent,
+        String result1 = StringUtils.replace(noteContent,
                 "<img[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>",
                 String.format(Locale.US, "\\ssrc\\s*=\\s*\"%s/api/file/getImage\\?fileId=.*?\"", Account.getCurrent().getHost()),
                 new StringUtils.Replacer() {
@@ -184,16 +187,16 @@ public class NoteService {
                         return result;
                     }
                 }, noteLocalId);
-    }
-
-    private static String convertToLocalImageLinkForMD(long noteLocalId, String noteContent) {
-        return StringUtils.replace(noteContent,
-                String.format(Locale.US, "!\\[.*?\\]\\(%s/api/file/getImage\\?fileId=.*?\\)", Account.getCurrent().getHost()),
-                String.format(Locale.US, "\\(%s/api/file/getImage\\?fileId=.*?\\)", Account.getCurrent().getHost()),
+        // added by xpgo
+        String localHostUrl = "http://localhost:9000";
+        result1 = StringUtils.replace(result1,
+                "<img[^>]+src\\s*=\\s*['\"]([^'\"]+)['\"][^>]*>",
+                String.format(Locale.US, "\\ssrc\\s*=\\s*\"%s/api/file/getImage\\?fileId=.*?\"", localHostUrl),
                 new StringUtils.Replacer() {
                     @Override
                     public String replaceWith(String original, Object... extraData) {
-                        Uri linkUri = Uri.parse(original.substring(1, original.length() - 1));
+                        XLog.i(TAG + "in=" + original);
+                        Uri linkUri = Uri.parse(original.substring(6, original.length() - 1));
                         String serverId = linkUri.getQueryParameter("fileId");
                         NoteFile noteFile = NoteFileDataStore.getByServerId(serverId);
                         if (noteFile == null) {
@@ -204,9 +207,58 @@ public class NoteService {
                             noteFile.save();
                         }
                         String localId = noteFile.getLocalId();
-                        return String.format(Locale.US, "(%s)", NoteFileService.getLocalImageUri(localId).toString());
+                        String result = String.format(Locale.US, " src=\"%s\"", NoteFileService.getLocalImageUri(localId).toString());
+                        XLog.i(TAG + "out=" + result);
+                        return result;
                     }
                 }, noteLocalId);
+        return  result1;
+    }
+
+    private static String convertToLocalImageLinkForMD(long noteLocalId, String noteContent) {
+        String result1 = StringUtils.replace(noteContent,
+            String.format(Locale.US, "!\\[.*?\\]\\(%s/api/file/getImage\\?fileId=.*?\\)", Account.getCurrent().getHost()),
+            String.format(Locale.US, "\\(%s/api/file/getImage\\?fileId=.*?\\)", Account.getCurrent().getHost()),
+            new StringUtils.Replacer() {
+                @Override
+                public String replaceWith(String original, Object... extraData) {
+                    Uri linkUri = Uri.parse(original.substring(1, original.length() - 1));
+                    String serverId = linkUri.getQueryParameter("fileId");
+                    NoteFile noteFile = NoteFileDataStore.getByServerId(serverId);
+                    if (noteFile == null) {
+                        noteFile = new NoteFile();
+                        noteFile.setNoteId((Long) extraData[0]);
+                        noteFile.setLocalId(new ObjectId().toString());
+                        noteFile.setServerId(serverId);
+                        noteFile.save();
+                    }
+                    String localId = noteFile.getLocalId();
+                    return String.format(Locale.US, "(%s)", NoteFileService.getLocalImageUri(localId).toString());
+                }
+            }, noteLocalId);
+        // added by xpgo
+        String localHostUrl = "http://localhost:9000";
+        result1 = StringUtils.replace(result1,
+            String.format(Locale.US, "!\\[.*?\\]\\(%s/api/file/getImage\\?fileId=.*?\\)", localHostUrl),
+            String.format(Locale.US, "\\(%s/api/file/getImage\\?fileId=.*?\\)", localHostUrl),
+            new StringUtils.Replacer() {
+                @Override
+                public String replaceWith(String original, Object... extraData) {
+                    Uri linkUri = Uri.parse(original.substring(1, original.length() - 1));
+                    String serverId = linkUri.getQueryParameter("fileId");
+                    NoteFile noteFile = NoteFileDataStore.getByServerId(serverId);
+                    if (noteFile == null) {
+                        noteFile = new NoteFile();
+                        noteFile.setNoteId((Long) extraData[0]);
+                        noteFile.setLocalId(new ObjectId().toString());
+                        noteFile.setServerId(serverId);
+                        noteFile.save();
+                    }
+                    String localId = noteFile.getLocalId();
+                    return String.format(Locale.US, "(%s)", NoteFileService.getLocalImageUri(localId).toString());
+                }
+            }, noteLocalId);
+        return  result1;
     }
 
     public static void saveNote(final long noteLocalId) {

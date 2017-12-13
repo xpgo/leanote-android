@@ -2,8 +2,11 @@ package org.houxg.leamonax.editor;
 
 
 import android.annotation.SuppressLint;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+
+import com.elvishew.xlog.XLog;
 
 import org.houxg.leamonax.utils.HtmlUtils;
 
@@ -19,6 +22,25 @@ public class MarkdownEditor extends Editor {
         super(listener);
     }
 
+    // js callback to java
+    private class MarkdownCallback {
+
+        private  MarkdownEditor mEditor;
+        public MarkdownCallback(MarkdownEditor editor) {
+            mEditor = editor;
+        }
+
+        @JavascriptInterface
+        public void linkTo(String url) {
+            mEditor.linkTo(url);
+        }
+    }
+    public void linkTo(String url) {
+        XLog.i(TAG + url);
+        mListener.linkTo(url);
+    }
+
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     public void init(WebView view) {
@@ -27,6 +49,7 @@ public class MarkdownEditor extends Editor {
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.setWebViewClient(new Editor.EditorClient());
         mWebView.setWebChromeClient(new WebChromeClient());
+        mWebView.addJavascriptInterface(new MarkdownCallback(this), "markdownCallback");
         mWebView.loadUrl("file:///android_asset/markdownEditor/editor-mobile.min.html?lang=" + Locale.getDefault().getLanguage());
     }
 
@@ -125,4 +148,5 @@ public class MarkdownEditor extends Editor {
     public void toggleHeading() {
         execJs("ZSSEditor.setHeading();");
     }
+
 }

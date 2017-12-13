@@ -7,9 +7,13 @@ import com.elvishew.xlog.XLog;
 
 import org.bson.types.ObjectId;
 import org.houxg.leamonax.Leamonax;
+import org.houxg.leamonax.database.NoteDataStore;
 import org.houxg.leamonax.database.NoteFileDataStore;
 import org.houxg.leamonax.model.Account;
 import org.houxg.leamonax.model.NoteFile;
+import org.houxg.leamonax.model.Note;
+import org.houxg.leamonax.network.ApiProvider;
+import org.houxg.leamonax.utils.RetrofitUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,6 +62,58 @@ public class NoteFileService {
 
     public static boolean isLocalImageUri(Uri uri) {
         return SCHEME.equals(uri.getScheme()) && IMAGE_PATH_WITH_SLASH.equals(uri.getPath());
+    }
+
+    public static String getAttachPath(Uri uri) {
+        String fileServerId = uri.getQueryParameter("fileId");
+        NoteFile noteFile = NoteFileDataStore.getByServerId(fileServerId);
+        if (noteFile == null) {
+            return null;
+        }
+        String filePath = null;
+        if (!TextUtils.isEmpty(noteFile.getLocalPath())) {
+            File file = new File(noteFile.getLocalPath());
+            filePath = file.isFile() ? noteFile.getLocalPath() : null;
+        }
+
+        if (filePath == null) {
+            // try to download it
+            String url = String.format(Locale.US, "%s/api/file/getAttach?fileId=%s&token=%s",
+                    Account.getCurrent().getHost(),
+                    noteFile.getServerId(),
+                    Account.getCurrent().getAccessToken());
+            try {
+                filePath = NoteFileService.getAttachFromServer(Uri.parse(url),
+                        Leamonax.getContext().getExternalCacheDir(), noteFile);
+                noteFile.setLocalPath(filePath);
+                noteFile.save();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return filePath;
+    }
+
+    private static String getAttachFromServer(Uri targetUri, File parentDir, NoteFile noteFile) throws IOException {
+        URI target = URI.create(targetUri.toString());
+        String fileName = String.format(Locale.US,
+                "leanote-%d-%s",
+                (int)(Math.random() * 500),
+                noteFile.getTitle());
+        try {
+            File file = new File(parentDir, fileName);
+            InputStream input = target.toURL().openStream();
+            BufferedSource source = Okio.buffer(Okio.source(input));
+            Sink output = Okio.sink(file);
+            source.readAll(output);
+            source.close();
+            output.flush();
+            output.close();
+            return file.getAbsolutePath();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static String getImagePath(Uri uri) {
