@@ -218,6 +218,10 @@ public class Note extends BaseModel implements Serializable {
         return noteFiles;
     }
 
+    public void setNoteFiles(List<NoteFile> files) {
+        noteFiles = files;
+    }
+
     @Override
     public String toString() {
         return "Note{" +

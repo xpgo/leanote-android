@@ -182,6 +182,9 @@ public class NoteService {
             }
             local.setServerId(remote.getServerId());
             local.setNoteId(noteLocalId);
+            local.setTitle(remote.getTitle());
+            local.setIsAttach(remote.isAttach());
+            local.setType(remote.getType());
             local.save();
             excepts.add(local.getLocalId());
         }

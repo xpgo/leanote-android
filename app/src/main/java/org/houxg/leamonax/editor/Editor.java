@@ -111,7 +111,17 @@ public abstract class Editor {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             XLog.i(TAG + "shouldOverrideUrlLoading(), url=" + url);
-            return super.shouldOverrideUrlLoading(view, url);
+            // return super.shouldOverrideUrlLoading(view, url);
+            if (url.startsWith("file:///api/file/getAttach?fileId")) {
+                // attachment link, do nothing
+                // mListener.linkTo(url);
+                // do not call this, it will throw android.os.NetworkOnMainThreadException
+                // https://stackoverflow.com/questions/6343166/how-do-i-fix-android-os-networkonmainthreadexception
+                // use return to prevent open in new web viewer
+                return true;
+            } else {
+                return super.shouldOverrideUrlLoading(view, url);
+            }
         }
 
         @Override

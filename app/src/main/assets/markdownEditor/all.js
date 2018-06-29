@@ -35443,18 +35443,20 @@ var LEAMD = {
       }
     });
 
-    /*
+    //
     $('#preview-contents').on('click', 'img, a', function() {
       if($(this).is('img')) {
         var src = $(this).attr('src');
-        callObjc('callback-image-tap:id=0~url=' + src); //  + '~meta='
+        window.markdownCallback.linkTo(src);
+        // callObjc('callback-image-tap:id=0~url=' + src); //  + '~meta='
       }
       else {
         var href = $(this).attr('href');
-        callObjc('callback-link-tap:id=zss_field_content~url=' + href);
+        window.markdownCallback.linkTo(href);
+        // callObjc('callback-link-tap:id=zss_field_content~url=' + href);
       }
     });
-    */
+    //
 
   },
 

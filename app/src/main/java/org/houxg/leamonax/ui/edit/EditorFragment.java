@@ -3,6 +3,7 @@ package org.houxg.leamonax.ui.edit;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.GravityCompat;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -20,6 +22,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.MimeTypeMap;
 import android.webkit.WebView;
 import android.widget.EditText;
 import android.widget.PopupWindow;
@@ -30,6 +33,7 @@ import com.yuyh.library.imgsel.ISNav;
 import com.yuyh.library.imgsel.config.ISListConfig;
 import com.yuyh.library.imgsel.ui.ISListActivity;
 
+import org.houxg.leamonax.Leamonax;
 import org.houxg.leamonax.R;
 import org.houxg.leamonax.editor.Editor;
 import org.houxg.leamonax.editor.MarkdownEditor;
@@ -41,6 +45,7 @@ import org.houxg.leamonax.utils.DialogUtils;
 import org.houxg.leamonax.utils.OpenUtils;
 import org.houxg.leamonax.widget.ToggleImageButton;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -462,7 +467,40 @@ public class EditorFragment extends Fragment implements Editor.EditorListener {
 
     @Override
     public void linkTo(String url) {
-        OpenUtils.openUrl(getActivity(), url);
+        if (url.contains("file/getAttach?fileId=")) {
+            String filePath = NoteFileService.getAttachPath(Uri.parse(url));
+            XLog.i(TAG + "attach file path: " + filePath);
+            if (TextUtils.isEmpty(filePath)) { return; }
+
+            // open the file
+            try
+            {
+                Intent intent = new Intent();
+                intent.setAction(android.content.Intent.ACTION_VIEW);
+                File file = new File(filePath);
+
+                MimeTypeMap mime = MimeTypeMap.getSingleton();
+                String ext=file.getName().substring(file.getName().lastIndexOf(".")+1);
+                String type = mime.getMimeTypeFromExtension(ext);
+
+                try {
+                    intent.setDataAndType(Uri.fromFile(file),type);
+                    startActivity(intent);
+                } catch (ActivityNotFoundException e) {
+                    // intent.setType("image/*|application/pdf|audio/*|text/*|*/*");
+                    intent.setDataAndType(Uri.fromFile(file), "*/*");
+                    // intent.setData(Uri.fromFile(file));
+                    startActivity(intent);
+                }
+            }
+            catch (Exception e)
+            {
+                // TODO: handle exception
+                e.printStackTrace();
+            }
+        } else {
+            OpenUtils.openUrl(getActivity(), url);
+        }
     }
 
     @Override
