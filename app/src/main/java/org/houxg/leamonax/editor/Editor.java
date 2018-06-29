@@ -119,6 +119,8 @@ public abstract class Editor {
                 // https://stackoverflow.com/questions/6343166/how-do-i-fix-android-os-networkonmainthreadexception
                 // use return to prevent open in new web viewer
                 return true;
+            } else if (url.startsWith("leanote://note/gotoNote?id=")) {
+                return true;
             } else {
                 return super.shouldOverrideUrlLoading(view, url);
             }
