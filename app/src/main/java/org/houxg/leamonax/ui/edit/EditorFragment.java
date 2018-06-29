@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.GravityCompat;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -32,6 +33,7 @@ import com.yuyh.library.imgsel.ISNav;
 import com.yuyh.library.imgsel.config.ISListConfig;
 import com.yuyh.library.imgsel.ui.ISListActivity;
 
+import org.houxg.leamonax.BuildConfig;
 import org.houxg.leamonax.R;
 import org.houxg.leamonax.database.NoteDataStore;
 import org.houxg.leamonax.editor.Editor;
@@ -468,6 +470,7 @@ public class EditorFragment extends Fragment implements Editor.EditorListener {
 
     @Override
     public void linkTo(String url) {
+        XLog.i(TAG + "----- link to : " + url);
         if (url.contains("file/getAttach?fileId=")) {
             String filePath = NoteFileService.getAttachPath(Uri.parse(url));
             XLog.i(TAG + "attach file path: " + filePath);
@@ -484,12 +487,17 @@ public class EditorFragment extends Fragment implements Editor.EditorListener {
                 String ext=file.getName().substring(file.getName().lastIndexOf(".")+1);
                 String type = mime.getMimeTypeFromExtension(ext);
 
+                Uri fileURI = FileProvider.getUriForFile(getActivity(),
+                        BuildConfig.APPLICATION_ID + ".provider",
+                        file);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
                 try {
-                    intent.setDataAndType(Uri.fromFile(file),type);
+                    intent.setDataAndType(fileURI,type);
                     startActivity(intent);
                 } catch (ActivityNotFoundException e) {
                     // intent.setType("image/*|application/pdf|audio/*|text/*|*/*");
-                    intent.setDataAndType(Uri.fromFile(file), "*/*");
+                    intent.setDataAndType(fileURI, "*/*");
                     // intent.setData(Uri.fromFile(file));
                     startActivity(intent);
                 }
@@ -506,7 +514,13 @@ public class EditorFragment extends Fragment implements Editor.EditorListener {
             if (note != null) {
                 startActivity(NotePreviewActivity.getOpenIntent(getActivity(), note.getId()));
             }
+        }  else if (url.startsWith("file:/getImage?id")) {
+            String path = NoteFileService.getImagePath(Uri.parse(url));
+            if (!TextUtils.isEmpty(path)) {
+                startActivity(PictureViewerActivity.getOpenIntent(getActivity(), path));
+            }
         } else {
+
             OpenUtils.openUrl(getActivity(), url);
         }
     }
