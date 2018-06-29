@@ -7,12 +7,14 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 
 import org.greenrobot.eventbus.EventBus;
 import org.houxg.leamonax.Leamonax;
@@ -28,9 +30,11 @@ import org.houxg.leamonax.utils.NetworkUtils;
 import org.houxg.leamonax.utils.SharedPreferenceUtils;
 import org.houxg.leamonax.utils.ToastUtils;
 import org.houxg.leamonax.widget.NoteList;
+import org.houxg.leamonax.widget.SelectPopupWindow;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import butterknife.BindView;
@@ -57,6 +61,7 @@ public class NoteFragment extends Fragment implements NoteAdapter.NoteAdapterLis
     NoteList mNoteList;
     Mode mCurrentMode;
     OnSearchFinishListener mOnSearchFinishListener;
+    private int mSortType = -1;
 
     public void setOnSearchFinishListener(OnSearchFinishListener onSearchFinishListener) {
         this.mOnSearchFinishListener = onSearchFinishListener;
@@ -66,13 +71,13 @@ public class NoteFragment extends Fragment implements NoteAdapter.NoteAdapterLis
     }
 
     public static NoteFragment newInstance() {
-        NoteFragment fragment = new NoteFragment();
-        return fragment;
+        return new NoteFragment();
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mSortType = SharedPreferenceUtils.read(SharedPreferenceUtils.CONFIG, SelectPopupWindow.SP_SORT_TYPE, -1);
         setHasOptionsMenu(true);
     }
 
@@ -87,9 +92,25 @@ public class NoteFragment extends Fragment implements NoteAdapter.NoteAdapterLis
         if (item.getItemId() == R.id.action_view_type) {
             mNoteList.toggleType();
             SharedPreferenceUtils.write(SharedPreferenceUtils.CONFIG, SP_VIEW_TYPE, mNoteList.getType());
+        } else if (item.getItemId() == R.id.action_view_more) {
+            final SelectPopupWindow popupWindow = new SelectPopupWindow(getContext());
+            if (getActivity() instanceof BaseActivity) {
+                Toolbar toolbar = ((BaseActivity) getActivity()).getToolbar();
+                popupWindow.setOnItemClickListener(new SelectPopupWindow.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int value) {
+                        mSortType = value;
+                        renderNotes();
+                        popupWindow.dismiss();
+                    }
+                });
+                popupWindow.showPopWindow(toolbar);
+            }
         }
         return super.onOptionsItemSelected(item);
     }
+
+
 
     @Nullable
     @Override
@@ -142,19 +163,44 @@ public class NoteFragment extends Fragment implements NoteAdapter.NoteAdapterLis
                 notes = NoteDataStore.getByTagText(mode.tagText, Account.getCurrent().getUserId());
                 break;
             case SEARCH:
-                notes = NoteDataStore.searchByTitle(mode.keywords);
+                notes = NoteDataStore.searchByKeyword(mode.keywords);
                 mNoteList.setHighlight(mode.keywords);
                 break;
             default:
                 notes = new ArrayList<>();
         }
         mNotes = notes;
-        Collections.sort(mNotes, new Note.UpdateTimeComparetor());
+        renderNotes();
+    }
+
+    private void renderNotes() {
+        Collections.sort(mNotes, getComparatorBySortType(mSortType));
         mNoteList.render(mNotes);
         if (mNotes.size() == 0 && mOnSearchFinishListener != null) {
             mOnSearchFinishListener.doSearchFinish();
         }
     }
+
+    private Comparator<Note> getComparatorBySortType(int sortType) {
+        switch (sortType) {
+            case 1:
+                return new Note.CreateTimeAscComparetor();
+            case 2:
+                return new Note.CreateTimeDescComparetor();
+            case 3:
+                return new Note.UpdateTimeAscComparetor();
+            case 4:
+                return new Note.UpdateTimeDescComparetor();
+            case 5:
+                return new Note.TitleAscComparetor();
+            case 6:
+                return new Note.TitleDescComparetor();
+            default:
+                return new Note.UpdateTimeDescComparetor();
+        }
+
+    }
+
 
     @Override
     public void onClickNote(Note note) {

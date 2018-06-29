@@ -13,19 +13,29 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 
 import com.elvishew.xlog.XLog;
+import com.tencent.bugly.crashreport.CrashReport;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.houxg.leamonax.Leamonax;
 import org.houxg.leamonax.R;
 import org.houxg.leamonax.ReadableException;
 import org.houxg.leamonax.database.NoteDataStore;
+import org.houxg.leamonax.database.NotebookDataStore;
+import org.houxg.leamonax.model.Account;
+import org.houxg.leamonax.model.CompleteEvent;
 import org.houxg.leamonax.model.Note;
+import org.houxg.leamonax.model.Notebook;
 import org.houxg.leamonax.model.Tag;
+import org.houxg.leamonax.service.AccountService;
 import org.houxg.leamonax.service.NoteFileService;
 import org.houxg.leamonax.service.NoteService;
 import org.houxg.leamonax.ui.BaseActivity;
 import org.houxg.leamonax.utils.CollectionUtils;
 import org.houxg.leamonax.utils.DialogDisplayer;
 import org.houxg.leamonax.utils.NetworkUtils;
+import org.houxg.leamonax.utils.ShareUtils;
 import org.houxg.leamonax.utils.ToastUtils;
 import org.houxg.leamonax.widget.LeaViewPager;
 
@@ -58,6 +68,7 @@ public class NoteEditActivity extends BaseActivity implements EditorFragment.Edi
     private Wrapper mOriginal;
     private Wrapper mModified;
     private boolean mIsNewNote;
+    private boolean mIsMenuSaveEnabled = false;
 
     private LeaViewPager mPager;
 
@@ -65,8 +76,9 @@ public class NoteEditActivity extends BaseActivity implements EditorFragment.Edi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_note);
-        initToolBar((Toolbar) findViewById(R.id.toolbar), true);
-        mPager = (LeaViewPager) findViewById(R.id.pager);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        initToolBar(toolbar, true);
+        mPager = findViewById(R.id.pager);
         mPager.setPagingEnabled(false);
         mPager.setAdapter(new SectionAdapter(getSupportFragmentManager()));
         mPager.setOffscreenPageLimit(2);
@@ -75,16 +87,43 @@ public class NoteEditActivity extends BaseActivity implements EditorFragment.Edi
             mEditorFragment = (EditorFragment) getSupportFragmentManager().findFragmentByTag(savedInstanceState.getString(TAG_EDITOR));
             mSettingsFragment = (SettingFragment) getSupportFragmentManager().findFragmentByTag(savedInstanceState.getString(TAG_SETTING));
         }
-
+        setTitle(getString(R.string.edit));
         long noteLocalId = getIntent().getLongExtra(EXT_NOTE_LOCAL_ID, -1);
         if (noteLocalId == -1) {
-            finish();
-            return;
+            String action = getIntent().getAction();
+            if (AccountService.isSignedIn() && TextUtils.equals(action, Intent.ACTION_SEND)) {
+                Note newNote = getNoteFromShareIntent();
+                noteLocalId = newNote.getId();
+                mIsNewNote = true;
+            } else {
+                finish();
+                return;
+            }
         }
+        EventBus.getDefault().register(this);
         mIsNewNote = getIntent().getBooleanExtra(EXT_IS_NEW_NOTE, false);
         mOriginal = new Wrapper(NoteDataStore.getByLocalId(noteLocalId));
         mModified = new Wrapper(NoteDataStore.getByLocalId(noteLocalId));
         setResult(RESULT_CANCELED);
+    }
+
+    public Note getNoteFromShareIntent() {
+        Note newNote = new Note();
+        Account account = Account.getCurrent();
+        newNote.setUserId(account.getUserId());
+        newNote.setTitle(ShareUtils.getSubject(getIntent()));
+        newNote.setContent(ShareUtils.getBody(getIntent()));
+        Notebook notebook;
+        notebook = NotebookDataStore.getRecentNoteBook(account.getUserId());
+        if (notebook != null) {
+            newNote.setNoteBookId(notebook.getNotebookId());
+        } else {
+            Exception exception = new IllegalStateException("notebook is null");
+            CrashReport.postCatchedException(exception);
+        }
+        newNote.setIsMarkDown(account.getDefaultEditor() == Account.EDITOR_MARKDOWN);
+        newNote.save();
+        return newNote;
     }
 
     public static Intent getOpenIntent(Context context, long noteLocalId, boolean isNewNote) {
@@ -109,14 +148,28 @@ public class NoteEditActivity extends BaseActivity implements EditorFragment.Edi
     }
 
     @Override
+    protected void onDestroy() {
+        Intent intent = new Intent();
+        intent.setAction("android.appwidget.action.APPWIDGET_UPDATE");
+        this.sendBroadcast(intent);
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_save:
+                if (!mIsMenuSaveEnabled) {
+                    ToastUtils.show(this, R.string.note_not_load_completed);
+                    return true;
+                }
                 filterUnchanged()
                         .doOnNext(new Action1<Wrapper>() {
                             @Override
                             public void call(Wrapper wrapper) {
                                 saveAsDraft(wrapper);
+                                NoteService.addInCreaseBuildKey(wrapper.note.getId());
                                 setResult(RESULT_OK);
                                 NetworkUtils.checkNetwork();
                             }
@@ -188,6 +241,7 @@ public class NoteEditActivity extends BaseActivity implements EditorFragment.Edi
                                         wrapper.note.delete();
                                     } else {
                                         saveAsDraft(wrapper);
+                                        NoteService.addInCreaseBuildKey(wrapper.note.getId());
                                     }
                                 }
                             });
@@ -315,8 +369,12 @@ public class NoteEditActivity extends BaseActivity implements EditorFragment.Edi
 
     @Override
     public void onInitialized() {
-        mEditorFragment.setTitle(mModified.note.getTitle());
-        mEditorFragment.setContent(mModified.note.getContent());
+        mEditorFragment.setTitleAndContent(mModified.note.getTitle(), mModified.note.getContent());
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(CompleteEvent event) {
+        mIsMenuSaveEnabled = true;
     }
 
     @Override

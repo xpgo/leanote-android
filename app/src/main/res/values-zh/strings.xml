@@ -24,6 +24,7 @@
     <string name="delete_note">删除笔记</string>
     <string name="delete_note_failed">删除笔记失败</string>
     <string name="edit">编辑</string>
+    <string name="rotate">旋转</string>
     <string name="editor">编辑器</string>
     <string name="email">邮箱</string>
     <string name="email_or_password_incorrect">邮箱或密码错误</string>
@@ -50,7 +51,7 @@
     <string name="password">密码</string>
     <string name="preview">预览</string>
     <string name="public_note">公开笔记</string>
-    <string name="recent_notes">最近</string>
+    <string name="recent_notes">最近笔记</string>
     <string name="revert">还原</string>
     <string name="reverting">还原中</string>
     <string name="save">保存</string>
@@ -118,4 +119,12 @@
     <string name="permission_get_description">我们需要一些权限来启动应用，请给予我们这些应用。请放心，我们保证只会申请必要的权限，并保证绝不泄露用户隐私信息</string>
     <string name="permission_get">权限申请</string>
     <string name="allow">允许</string>
+    <string name="lea_api_error_need_upgrade_account">需要升级蚂蚁笔记账户</string>
+    <string name="webview_select_picture">选择图片</string>
+    <string name="note_not_load_completed">笔记未加载完，不能保存</string>
+    <string name="full_text_search">全文搜索</string>
+    <string name="full_text_search_index_rebuild">重建索引</string>
+    <string name="full_text_search_index_rebuild_success">索引构建成功</string>
+    <string name="full_text_search_rebuild_index_msg">这是一个很耗时的操作,你确定要重新构建索引么(默认情况下我们不推荐用户使用此功能)?</string>
+    <string name="progress_dialog_loading_msg">Processing&#8230;</string>
 </resources>

@@ -1,6 +1,5 @@
 package org.houxg.leamonax.ui;
 
-import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -14,10 +13,10 @@ import org.houxg.leamonax.R;
 
 public class BaseActivity extends AppCompatActivity {
 
+    private Toolbar mToolbar;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(getResources().getColor(R.color.toolbar));
         }
@@ -28,8 +27,13 @@ public class BaseActivity extends AppCompatActivity {
         initToolBar(toolbar, false);
     }
 
+    public Toolbar getToolbar() {
+        return mToolbar;
+    }
+
     protected void initToolBar(Toolbar toolbar, boolean hasBackArrow) {
         if (toolbar != null) {
+            mToolbar = toolbar;
             setSupportActionBar(toolbar);
             toolbar.setTitleTextColor(0xffFAFAFA);
             toolbar.setTitle(getTitle());

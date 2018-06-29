@@ -4,11 +4,14 @@
 
 **It's still in developing.** Be careful when you using it and make sure you have an backup.
 
+# 中文README
+[README_ZH](README-zh.md)
+
 # Screenshot
-![MainActivity](https://raw.githubusercontent.com/houxg/Leamonax/develop/screenshot/MainActivity.png)
-![Navigation](https://raw.githubusercontent.com/houxg/Leamonax/develop/screenshot/Navigation.png)
-![RichText](https://raw.githubusercontent.com/houxg/Leamonax/develop/screenshot/RichText.png)
-![Markdown](https://raw.githubusercontent.com/houxg/Leamonax/develop/screenshot/Markdown.png)
+<img src="screenshot/MainActivity.png" alt="MainActivity" width="250" height="446">&ensp; &ensp;<img src="screenshot/Navigation.png" alt="Navigation" width="250" height="446">&ensp; &ensp;<img src="screenshot/RichText.png" alt="RichText" width="250" height="446"> <br>
+
+<img src="screenshot/Markdown.png" alt="Markdown" width="250" height="446">&ensp; &ensp;<img src="screenshot/Search.png" alt="Search" width="250" height="446">&ensp; &ensp;<img src="screenshot/AppWidget.png" alt="AppWidget" width="250" height="446"> <br>
+
 
 # Download
 - [Git Release](https://github.com/leanote/leanote-android/releases/latest)
@@ -21,6 +24,7 @@
 - [x] Markdown support
 - [x] Custom host
 - [x] Search by note's title
+- [x] appWidget
 
 # TODO
 - [ ] Searching for full-text fields
@@ -30,3 +34,5 @@
 - [houxg](https://github.com/houxg)
 - [xingstarx](https://github.com/xingstarx)
 - [nicacol](https://github.com/nicacol)
+- [Ericwyn](https://github.com/Ericwyn)
+- [binsheng](https://github.com/binsheng)

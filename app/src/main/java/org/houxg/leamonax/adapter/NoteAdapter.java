@@ -26,6 +26,7 @@ import org.houxg.leamonax.model.Notebook;
 import org.houxg.leamonax.service.NoteFileService;
 import org.houxg.leamonax.utils.FileUtils;
 import org.houxg.leamonax.utils.HtmlUtils;
+import org.houxg.leamonax.utils.StringUtils;
 import org.houxg.leamonax.utils.TimeUtils;
 import org.houxg.leamonax.widget.NoteList;
 
@@ -66,7 +67,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteHolder> {
         if (TextUtils.isEmpty(titleKeyWord)) {
             mTitleHighlight = null;
         } else {
-            mTitleHighlight = Pattern.compile(titleKeyWord, Pattern.CASE_INSENSITIVE);
+            mTitleHighlight = Pattern.compile(StringUtils.escapeRegex(titleKeyWord), Pattern.CASE_INSENSITIVE);
         }
     }
 
@@ -237,11 +238,12 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteHolder> {
     }
 
     private CharSequence getHighlightedText(String text) {
+        String newText = HtmlUtils.delHTMLTag(text);
         if (mTitleHighlight == null) {
-            return HtmlUtils.delHTMLTag(text);
+            return newText;
         }
-        SpannableStringBuilder builder = new SpannableStringBuilder(HtmlUtils.delHTMLTag(text));
-        Matcher matcher = mTitleHighlight.matcher(text);
+        SpannableStringBuilder builder = new SpannableStringBuilder(newText);
+        Matcher matcher = mTitleHighlight.matcher(newText);
         int color = 0xFFFDD835;
         while (matcher.find()) {
             builder.setSpan(new BackgroundColorSpan(color), matcher.start(), matcher.end(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
