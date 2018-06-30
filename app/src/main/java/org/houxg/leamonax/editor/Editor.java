@@ -108,7 +108,7 @@ public abstract class Editor {
             XLog.i(TAG + "onLoadResource(), rul=" + url);
         }
 
-        @Override
+        // @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             XLog.i(TAG + "shouldOverrideUrlLoading(), url=" + url);
             // return super.shouldOverrideUrlLoading(view, url);
@@ -120,6 +120,9 @@ public abstract class Editor {
                 // use return to prevent open in new web viewer
                 return true;
             } else if (url.startsWith("leanote://note/gotoNote?id=")) {
+                return true;
+            }  else if (url.startsWith("http://") || url.startsWith("https://")) {
+                // I want it open externally
                 return true;
             } else {
                 return super.shouldOverrideUrlLoading(view, url);
